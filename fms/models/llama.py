@@ -425,20 +425,19 @@ def _hf_sd_to_fms_sd(hf_sd: Mapping) -> Mapping:
         new_sd[new_name] = param
 
         # hf -> fms requires a transpose operation for the query and key
-        if bool(trans_required_pattern.match(new_name)):
-            temp = new_sd[new_name]
-            # nheads is used in the transformation required for hf->fms
-            # here we are using 128 as this value fits with all popular models
-            #   7B, 13B, 70B to recover the number of heads
-            nheads = int(temp.size(0) / 128)
+        # if bool(trans_required_pattern.match(new_name)):
+        #     temp = new_sd[new_name]
+        #     # nheads is used in the transformation required for hf->fms
+        #     # here we are using 128 as this value fits with all popular models
+        #     #   7B, 13B, 70B to recover the number of heads
+        #     nheads = int(temp.size(0) / 128)
 
-            temp = (
-                temp.view(nheads, 2, -1, temp.size(1))
-                .transpose(1, 2)
-                .reshape(*temp.size())
-            )
-
-            new_sd[new_name] = temp
+        #     temp = (
+        #         temp.view(nheads, 2, -1, temp.size(1))
+        #         .transpose(1, 2)
+        #         .reshape(*temp.size())
+        #     )
+        #     new_sd[new_name] = temp
 
     return new_sd
 
@@ -512,21 +511,21 @@ def convert_hf_llama(hf_model: "LlamaForCausalLM") -> LLaMA:  # type: ignore
     model.shared.head.weight = hf_model.lm_head.weight
 
     # model.rot_emb.freqs = hf_model.model.layers[0].self_attn.rotary_emb.inv_freq
-    for layer in model.layers:
-        q = layer.attn.query.weight.data
-        q = (
-            q.view(model.config.nheads, 2, -1, q.size(1))
-            .transpose(1, 2)
-            .reshape(*q.size())
-        )
-        layer.attn.query.weight.data = q
+    # for layer in model.layers:
+    #     q = layer.attn.query.weight.data
+    #     q = (
+    #         q.view(model.config.nheads, 2, -1, q.size(1))
+    #         .transpose(1, 2)
+    #         .reshape(*q.size())
+    #     )
+    #     layer.attn.query.weight.data = q
 
-        k = layer.attn.key.weight.data
-        k = (
-            k.view(model.config.nheads, 2, -1, k.size(1))
-            .transpose(1, 2)
-            .reshape(*k.size())
-        )
-        layer.attn.key.weight.data = k
+    #     k = layer.attn.key.weight.data
+    #     k = (
+    #         k.view(model.config.nheads, 2, -1, k.size(1))
+    #         .transpose(1, 2)
+    #         .reshape(*k.size())
+    #     )
+    #     layer.attn.key.weight.data = k
 
     return model
